@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Magistre</string>
+    <string name="action_add">School toevoegen</string>
+    <string name="action_reload">Herladen</string>
+    <string name="action_change">School veranderen</string>
+    <string name="action_delete">Scholen wissen</string>
+    <string name="action_hide">Menu verbergen</string>
+    <string name="action_clear_cache">Cache legen</string>
+
+</resources>
