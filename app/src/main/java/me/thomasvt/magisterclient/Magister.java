@@ -38,6 +38,7 @@ public class Magister extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i("debug", "onCreate");
         super.onCreate(savedInstanceState);
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -46,15 +47,25 @@ public class Magister extends Activity {
 
         checkFistStart(); // prompt with school choose if not started
 
+
+
+        giveVoteOption(); //ask for rating if requirement met
+    }
+
+    /* Disabled because function caused a freeze on startup, causing an never ending white screen.
+    void analytics() {
+        Log.i("debug", "analytics");
         GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
         analytics.newTracker(R.xml.global_tracker);
         analytics.enableAutoActivityReports(getApplication());
         analytics.setLocalDispatchPeriod(30);
 
-        giveVoteOption(); //ask for rating if requirement met
+        GoogleAnalytics.getInstance(this).reportActivityStart(this); //Get an Analytics tracker to report app starts & uncaught exceptions etc.
+        GoogleAnalytics.getInstance(this).dispatchLocalHits();
     }
-
+    */
     void enableSite() {
+        Log.i("debug", "enableSite");
         mWebView = new WebView(this);
 
         setContentView(R.layout.activity_magister);
@@ -67,23 +78,25 @@ public class Magister extends Activity {
     }
 
     protected void onStart() {
+        Log.i("debug", "onStart");
         super.onStart();
-        GoogleAnalytics.getInstance(this).reportActivityStart(this); //Get an Analytics tracker to report app starts & uncaught exceptions etc.
-        GoogleAnalytics.getInstance(this).dispatchLocalHits();
     }
 
     protected void onStop() {
+        Log.i("debug", "onStop");
         super.onStop();
         GoogleAnalytics.getInstance(this).reportActivityStop(this); //Stop the analytics tracking
     }
 
     private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService( CONNECTIVITY_SERVICE );
+        Log.i("debug", "isNetworkAvailable");
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null;
     }
 
     public void welcomeFinished(View v) {
+        Log.i("debug", "welcomeFinished");
         final EditText text = (EditText) findViewById(R.id.schoolName);
 
         String schoolName = text.getEditableText().toString();
@@ -92,12 +105,14 @@ public class Magister extends Activity {
         Log.i("schoolName", schoolName);
         preferences.edit().putBoolean("firstStart", false).apply();
         preferences.edit().putString("schoolURL", schoolName).apply();
+        addSchoolToList(schoolName);
 
         enableSite();
         //loadWebsite(true);
     }
 
     void loadWebsite(boolean firstTime) {
+        Log.i("debug", "loadWebsite");
         String url = "https://" + getUrl() + ".magister.net/";
 
         CookieSyncManager.createInstance(this);
@@ -147,16 +162,17 @@ public class Magister extends Activity {
     }
 
     public void checkFistStart() {
+        Log.i("debug", "checkFirstStart");
         boolean firstStart = preferences.getBoolean("firstStart", true);
         if (firstStart)
             setContentView(R.layout.activity_welcome);
         else {
-
             enableSite();
         }
     }
 
     void addSchool() {
+        Log.i("debug", "addSchool");
         Builder alert = new Builder(this);
 
         alert.setTitle("Wat is je magister website?");
@@ -195,6 +211,7 @@ public class Magister extends Activity {
     }
 
     void changeSchool() {
+        Log.i("debug", "changeSchool");
         Set names = preferences.getStringSet("scholen", new HashSet<String>());
         //Set names = new HashSet<String>();
 
@@ -222,6 +239,7 @@ public class Magister extends Activity {
     }
 
     void giveVoteOption() {
+        Log.i("debug", "giveVoteOption");
         AppRater appRater = new AppRater(this);
         appRater.setDaysBeforePrompt(3);
         appRater.setLaunchesBeforePrompt(7);
@@ -234,6 +252,7 @@ public class Magister extends Activity {
     }
 
     void addSchoolToList(String school) {
+        Log.i("debug", "addSchoolToList");
         Set names = preferences.getStringSet("scholen", new HashSet<String>());
 
         String schools = android.text.TextUtils.join(",", names.toArray());
@@ -249,6 +268,7 @@ public class Magister extends Activity {
     }
 
     void deleteSchools() {
+        Log.i("debug", "deleteSchools");
         Builder builder = new Builder(this);
 // Add the buttons
         builder.setTitle("Weet je zeker dat je de scholen wilt wissen?");
@@ -269,7 +289,9 @@ public class Magister extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (mWebView.canGoBack())
+        if (mWebView == null)
+            super.onBackPressed();
+        else if (mWebView.canGoBack())
             mWebView.goBack();
         else
             super.onBackPressed();
@@ -283,6 +305,7 @@ public class Magister extends Activity {
     }
 
     void clearCache() {
+        Log.i("debug", "clearCache");
         mWebView.clearCache(true);
         mWebView.reload();
     }
@@ -314,6 +337,7 @@ public class Magister extends Activity {
     }
 
     void hideMenu() {
+        Log.i("debug", "hideMenu");
         Builder builder = new Builder(this);
 // Add the buttons
         builder.setTitle("Weet je zeker dat je de menubalk wilt verbergen?");
