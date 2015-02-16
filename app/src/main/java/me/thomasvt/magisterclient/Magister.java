@@ -47,8 +47,6 @@ public class Magister extends Activity {
 
         checkFistStart(); // prompt with school choose if not started
 
-
-
         giveVoteOption(); //ask for rating if requirement met
     }
 
