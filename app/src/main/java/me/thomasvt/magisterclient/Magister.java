@@ -9,6 +9,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
@@ -22,14 +23,14 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.Toast;
-import com.google.android.gms.analytics.GoogleAnalytics;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static android.app.AlertDialog.*;
+import static android.app.AlertDialog.Builder;
 
 
 public class Magister extends Activity {
@@ -83,7 +84,7 @@ public class Magister extends Activity {
     protected void onStop() {
         Log.i("debug", "onStop");
         super.onStop();
-        GoogleAnalytics.getInstance(this).reportActivityStop(this); //Stop the analytics tracking
+        //GoogleAnalytics.getInstance(this).reportActivityStop(this); //Stop the analytics tracking
     }
 
     private boolean isNetworkAvailable() {
@@ -251,30 +252,23 @@ public class Magister extends Activity {
 
     void addSchoolToList(String school) {
         Log.i("debug", "addSchoolToList");
-        Set names = preferences.getStringSet("scholen", new HashSet<String>());
+        Set scholen = preferences.getStringSet("scholen", new HashSet<String>());
 
-        String schools = android.text.TextUtils.join(",", names.toArray());
-        String[] types = schools.split(",");
-
-        for (String entry : types) {
-            if (entry.equalsIgnoreCase(school))
-                return;
-        }
-
-        names.add(school);
-        preferences.edit().putStringSet("scholen", names).apply();
+        scholen.add(school);
+        preferences.edit().putStringSet("scholen", scholen).apply();
     }
 
     void deleteSchools() {
         Log.i("debug", "deleteSchools");
         Builder builder = new Builder(this);
-// Add the buttons
+
         builder.setTitle("Weet je zeker dat je de scholen wilt wissen?");
         builder.setMessage("Dit kan niet ongedaan worden gemaakt");
         builder.setPositiveButton("Ja", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 preferences.edit().putStringSet("scholen", new HashSet<String>()).apply();
                 Toast.makeText(getApplicationContext(), "Scholen zijn gewist!", Toast.LENGTH_LONG).show();
+                setContentView(R.layout.activity_welcome);
             }
         });
         builder.setNegativeButton("Nee", new DialogInterface.OnClickListener() {
@@ -285,15 +279,31 @@ public class Magister extends Activity {
         dialog.show();
     }
 
+    boolean doubleBackToExitPressedOnce = false;
+
     @Override
     public void onBackPressed() {
-        if (mWebView == null)
+        if (mWebView != null) {
+            if (mWebView.canGoBack())
+                mWebView.goBack();
+        }
+
+        if (doubleBackToExitPressedOnce) {
             super.onBackPressed();
-        else if (mWebView.canGoBack())
-            mWebView.goBack();
-        else
-            super.onBackPressed();
+            return;
+        }
+
+        doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Klik nog een keer om de app af te sluiten", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce = false;
+            }
+        }, 2000);
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

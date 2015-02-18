@@ -15,8 +15,8 @@ android {
         applicationId 'me.thomasvt.magisterclient'
         minSdkVersion 11
         targetSdkVersion 21
-        versionCode 14
-        versionName '2.4'
+        versionCode 16
+        versionName '2.6'
         signingConfig signingConfigs.config
     }
     buildTypes {
