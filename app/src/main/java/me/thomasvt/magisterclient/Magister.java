@@ -98,11 +98,11 @@ public class Magister extends Activity {
         final EditText text = (EditText) findViewById(R.id.schoolName);
 
         String schoolName = text.getEditableText().toString();
-        if (schoolName.length() <= 3)
+        if (schoolName.length() < 3)
             return;
         Log.i("schoolName", schoolName);
         preferences.edit().putBoolean("firstStart", false).apply();
-        preferences.edit().putString("schoolURL", schoolName).apply();
+        preferences.edit().putString("url", schoolName).apply();
         addSchoolToList(schoolName);
 
         enableSite();
