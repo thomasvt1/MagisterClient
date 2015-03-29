@@ -104,6 +104,7 @@ public class Magister extends Activity {
         Log.i("schoolName", schoolName);
         preferences.edit().putBoolean("firstStart", false).apply();
         preferences.edit().putString("url", schoolName).apply();
+        preferences.edit().putBoolean("setUrl", true).apply();
         addSchoolToList(schoolName);
 
         enableSite();
