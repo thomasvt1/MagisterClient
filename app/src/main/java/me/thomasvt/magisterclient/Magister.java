@@ -9,51 +9,76 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.Window;
-import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.widget.EditText;
 import android.widget.Toast;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static android.app.AlertDialog.Builder;
 
 
 public class Magister extends Activity {
     private WebView mWebView;
-    static SharedPreferences preferences;
+    private SharedPreferences mPreferences;
+    
+    public static final String TAG = "Magistre";
+    private static final String PREF_HIDEMENU = "hidemenu";
+    public static final String PREF_URL = "url";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i("debug", "onCreate");
+        Log.i(TAG, "onCreate");
         super.onCreate(savedInstanceState);
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        if (preferences.getBoolean("hidemenu", false))
-            requestWindowFeature(Window.FEATURE_NO_TITLE);
+        if (mPreferences.getBoolean(PREF_HIDEMENU, false)) {
+            getActionBar().hide();
+        }
 
-        checkFistStart(); // prompt with school choose if not started
+        CookieSyncManager.createInstance(this).startSync();
+
+        String url = mPreferences.getString(PREF_URL, null);
+        if(url == null) {
+            selectSchool();
+            finish();
+            return;
+        }
+
+        setContentView(R.layout.activity_magister);
+        mWebView = (WebView) findViewById(R.id.activity_magister_webview);
+
+        WebSettings webSettings = mWebView.getSettings();
+
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAppCacheEnabled(true);
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDatabaseEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        webSettings.setSupportMultipleWindows(false);
+        webSettings.setAppCacheMaxSize(1024 * 1024 * 8);
+        webSettings.setAppCachePath(getCacheDir().getAbsolutePath());
+        //TODO: Better cache function
+        //webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        //webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        if (Build.VERSION.SDK_INT >= 16) {
+            webSettings.setAllowUniversalAccessFromFileURLs(true);
+            webSettings.setAllowFileAccessFromFileURLs(true);
+        }
+        mWebView.setWebViewClient(new MyAppWebViewClient(this));
+
+        if(savedInstanceState == null) {
+            loadWebsite();
+        }
 
         giveVoteOption(); //ask for rating if requirement met
     }
 
     /* Disabled because function caused a freeze on startup, causing an never ending white screen.
     void analytics() {
-        Log.i("debug", "analytics");
+        Log.i(TAG, "analytics");
         GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
         analytics.newTracker(R.xml.global_tracker);
         analytics.enableAutoActivityReports(getApplication());
@@ -63,183 +88,77 @@ public class Magister extends Activity {
         GoogleAnalytics.getInstance(this).dispatchLocalHits();
     }
     */
-    void enableSite() {
-        Log.i("debug", "enableSite");
-        mWebView = new WebView(this);
 
-        setContentView(R.layout.activity_magister);
-
-        mWebView = (WebView) findViewById(R.id.activity_magister_webview);
-
-        new MyAppWebViewClient(this);
-
-        loadWebsite(false);
+    protected void onDestroy() {
+        Log.i(TAG, "onDestroy");
+        CookieSyncManager.getInstance().stopSync();
+        super.onDestroy();
     }
 
     protected void onStart() {
-        Log.i("debug", "onStart");
+        Log.i(TAG, "onStart");
         super.onStart();
     }
 
     protected void onStop() {
-        Log.i("debug", "onStop");
+        Log.i(TAG, "onStop");
         super.onStop();
         //GoogleAnalytics.getInstance(this).reportActivityStop(this); //Stop the analytics tracking
     }
 
     private boolean isNetworkAvailable() {
-        Log.i("debug", "isNetworkAvailable");
+        Log.i(TAG, "isNetworkAvailable");
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null;
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    public void welcomeFinished(View v) {
-        Log.i("debug", "welcomeFinished");
-        final EditText text = (EditText) findViewById(R.id.schoolName);
-
-        String schoolName = text.getEditableText().toString();
-        if (schoolName.length() < 3)
-            return;
-        Log.i("schoolName", schoolName);
-        preferences.edit().putBoolean("firstStart", false).apply();
-        preferences.edit().putString("url", schoolName).apply();
-        preferences.edit().putBoolean("setUrl", true).apply();
-        addSchoolToList(schoolName);
-
-        enableSite();
-        //loadWebsite(true);
-    }
-
-    void loadWebsite(boolean firstTime) {
-        Log.i("debug", "loadWebsite");
-        String url = "https://" + getUrl() + ".magister.net/";
-
-        CookieSyncManager.createInstance(this);
-        CookieManager.getInstance().setAcceptCookie(true);
-        if (Build.VERSION.SDK_INT >= 12)
-            CookieManager.setAcceptFileSchemeCookies(true);
-        CookieSyncManager.getInstance().startSync();
-
-        mWebView.setWebViewClient(new MyAppWebViewClient(this));
-        mWebView.setWebChromeClient(new WebChromeClient());
+    private void loadWebsite() {
+        String url = "https://" + getHost() + "/";
+        Log.i(TAG, "loadWebsite");
 
         WebSettings webSettings = mWebView.getSettings();
-        webSettings.setAllowFileAccess(true);
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setDatabaseEnabled(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-        //webSettings.setSupportMultipleWindows(true);
-        webSettings.setAppCacheMaxSize(1024 * 1024 * 8);
-        webSettings.setAppCachePath(getApplicationContext().getCacheDir().getAbsolutePath());
-        //TODO: Better cache function
-        //webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        //webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-        if (Build.VERSION.SDK_INT >= 16) {
-            webSettings.setAllowUniversalAccessFromFileURLs(true);
-            webSettings.setAllowFileAccessFromFileURLs(true);
-        }
 
-        if ( !isNetworkAvailable() ) { // loading offline
+        if (!isNetworkAvailable()) { // loading offline
             webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-            mWebView.loadUrl("https://" + getUrl() + ".magister.net/leerling/#/agenda");
-            Toast.makeText(getApplicationContext(), "Offline modus, niet alle functies zijn beschikbaar", Toast.LENGTH_LONG).show();
-            return;
+            mWebView.loadUrl(url + "leerling/#/agenda");
+            Toast.makeText(Magister.this, R.string.offline_mode, Toast.LENGTH_LONG).show();
         }
-
-        if (firstTime) {
-            mWebView.clearCache(true);
-        }
-
-        mWebView.loadUrl(url);
-        //mWebView.loadUrl("http://google.nl/");
-    }
-
-    public static String getUrl() {
-        return preferences.getString("url", "segbroek");
-    }
-
-    public void checkFistStart() {
-        Log.i("debug", "checkFirstStart");
-        boolean firstStart = preferences.getBoolean("firstStart", true);
-        if (firstStart)
-            setContentView(R.layout.activity_welcome);
         else {
-            enableSite();
+            webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+            mWebView.loadUrl(url);
         }
     }
 
-    void addSchool() {
-        Log.i("debug", "addSchool");
-        Builder alert = new Builder(this);
-
-        alert.setTitle("Wat is je magister website?");
-        alert.setMessage("____.magister.net");
-
-// Set an EditText view to get user input
-        final EditText input = new EditText(this);
-        alert.setView(input);
-
-        alert.setPositiveButton("Toevoegen", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                String value = input.getText().toString();
-                if (value.length() <= 1) {
-                    Toast.makeText(getApplicationContext(), "Je moet een naam invullen", Toast.LENGTH_LONG).show();
-                    addSchool();
-                    return;
-                }
-                addSchoolToList(value);
-                preferences.edit().putString("url", value).apply();
-                preferences.edit().putBoolean("setUrl", true).apply();
-
-                loadWebsite(false);
-            }
-        });
-
-        alert.setNegativeButton("Annuleren", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                if (!preferences.getBoolean("setUrl", false)) {
-                    Toast.makeText(getApplicationContext(), "Je moet een naam invullen", Toast.LENGTH_LONG).show();
-                    addSchool();
-                }
-            }
-        });
-
-        alert.show();
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mWebView.saveState(outState);
     }
 
-    void changeSchool() {
-        Log.i("debug", "changeSchool");
-        Set names = preferences.getStringSet("scholen", new HashSet<String>());
-        //Set names = new HashSet<String>();
-
-        String schools = android.text.TextUtils.join(",", names.toArray());
-        String[] types = schools.split(",");
-
-        final List<String> mapFromSet = new ArrayList<String>();
-        Collections.addAll(mapFromSet, types);
-
-        Builder b = new Builder(this);
-        b.setTitle("Kies de school");
-        b.setItems(types, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Toast.makeText(getApplicationContext(), mapFromSet.get(which), Toast.LENGTH_LONG).show();
-                preferences.edit().putString("url", mapFromSet.get(which)).apply();
-                loadWebsite(false);
-                dialog.dismiss();
-            }
-
-        });
-
-        b.show();
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        mWebView.restoreState(savedInstanceState);
     }
 
-    void giveVoteOption() {
-        Log.i("debug", "giveVoteOption");
+    public String getHost() {
+        String url = mPreferences.getString(PREF_URL, null);
+        // Tobias: Compat met vorige versies
+        if(!url.endsWith(".magister.net")) {
+            url += ".magister.net";
+            mPreferences.edit().putString(PREF_URL, url).apply();
+        }
+        return url;
+    }
+
+    private void selectSchool() {
+        Log.i(TAG, "selectSchool");
+        startActivity(new Intent(this, SchoolSelector.class));
+    }
+
+    private void giveVoteOption() {
+        Log.i(TAG, "giveVoteOption");
         AppRater appRater = new AppRater(this);
         appRater.setDaysBeforePrompt(3);
         appRater.setLaunchesBeforePrompt(7);
@@ -251,119 +170,71 @@ public class Magister extends Activity {
         appRater.show();
     }
 
-    void addSchoolToList(String school) {
-        Log.i("debug", "addSchoolToList");
-        Set scholen = preferences.getStringSet("scholen", new HashSet<String>());
-
-        scholen.add(school);
-        preferences.edit().putStringSet("scholen", scholen).apply();
-    }
-
-    void deleteSchools() {
-        Log.i("debug", "deleteSchools");
-        Builder builder = new Builder(this);
-
-        builder.setTitle("Weet je zeker dat je de scholen wilt wissen?");
-        builder.setMessage("Dit kan niet ongedaan worden gemaakt");
-        builder.setPositiveButton("Ja", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                preferences.edit().putStringSet("scholen", new HashSet<String>()).apply();
-                Toast.makeText(getApplicationContext(), "Scholen zijn gewist!", Toast.LENGTH_LONG).show();
-                setContentView(R.layout.activity_welcome);
-            }
-        });
-        builder.setNegativeButton("Nee", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-    boolean doubleBackToExitPressedOnce = false;
+    private Toast mExitToast;
 
     @Override
     public void onBackPressed() {
-        if (mWebView != null) {
-            if (mWebView.canGoBack())
-                mWebView.goBack();
-        }
-
-        if (doubleBackToExitPressedOnce) {
-            super.onBackPressed();
+        if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack()) {
+            mWebView.goBack();
             return;
         }
 
-        doubleBackToExitPressedOnce = true;
-        Toast.makeText(this, "Klik nog een keer om de app af te sluiten", Toast.LENGTH_SHORT).show();
+        // Tobias: Degelijkere methode om te checken of een Toast nog zichtbaar is.
+        if (mExitToast != null && mExitToast.getView() != null && mExitToast.getView().isShown()) {
+            mExitToast.cancel();
+            finish();
+            return;
+        }
 
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                doubleBackToExitPressedOnce = false;
-            }
-        }, 2000);
+        mExitToast = Toast.makeText(this, R.string.repeat_click_to_close, Toast.LENGTH_SHORT);
+        mExitToast.show();
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.magister, menu);
         return true;
     }
 
-    void clearCache() {
-        Log.i("debug", "clearCache");
-        mWebView.clearCache(true);
-        mWebView.reload();
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        boolean actionBarHidden = mPreferences.getBoolean(PREF_HIDEMENU, false);
+        menu.findItem(R.id.action_hide_actionbar).setVisible(!actionBarHidden).setEnabled(!actionBarHidden);
+        menu.findItem(R.id.action_show_actionbar).setVisible(actionBarHidden).setEnabled(actionBarHidden);
+        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.R_layout_action_add:
-                addSchool();
-                return true;
-            case R.id.R_layout_action_reload:
+            case R.id.action_reload:
                 mWebView.reload();
                 return true;
-            case R.id.R_layout_action_clear_cache:
-                clearCache();
+            case R.id.action_clear_cache:
+                mWebView.clearCache(true);
+                mWebView.reload();
                 return true;
-            case R.id.R_layout_action_change:
-                changeSchool();
+            case R.id.action_change:
+                selectSchool();
                 return true;
-            case R.id.R_layout_action_delete:
-                deleteSchools();
+            case R.id.action_hide_actionbar:
+                new AlertDialog.Builder(this)
+                    .setTitle(R.string.action_hide_actionbar)
+                    .setMessage(R.string.warning_hide_actionbar)
+                    .setNegativeButton(R.string.no, null)
+                    .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            getActionBar().hide();
+                            mPreferences.edit().putBoolean(PREF_HIDEMENU, true).apply();
+                        }
+                    })
+                    .show();
                 return true;
-            case R.id.R_layout_action_hide:
-                hideMenu();
+            case R.id.action_show_actionbar:
+                getActionBar().show();
+                mPreferences.edit().putBoolean(PREF_HIDEMENU, false).apply();
                 return true;
-
         }
         return false;
-    }
-
-    void hideMenu() {
-        Log.i("debug", "hideMenu");
-        Builder builder = new Builder(this);
-// Add the buttons
-        builder.setTitle("Weet je zeker dat je de menubalk wilt verbergen?");
-        builder.setMessage("Dit kan niet ongedaan worden gemaakt. tenzij je de app reset");
-        builder.setPositiveButton("Ja", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                preferences.edit().putBoolean("hidemenu", true).apply();
-                Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage( getBaseContext().getPackageName() );
-                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(i);
-            }
-        });
-        builder.setNegativeButton("Nee", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
     }
 }

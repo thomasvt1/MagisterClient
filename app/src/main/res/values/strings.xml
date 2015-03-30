@@ -6,7 +6,24 @@
     <string name="action_reload">Herladen</string>
     <string name="action_change">School veranderen</string>
     <string name="action_delete">Scholen wissen</string>
-    <string name="action_hide">Menu verbergen</string>
+    <string name="action_hide_actionbar">Menu verbergen</string>
+    <string name="action_show_actionbar">Menu tonen</string>
     <string name="action_clear_cache">Cache legen</string>
+    <string name="school_selection">Schoolselectie</string>
+    <string name="hint_search">Zoek hier je school&#8230;</string>
+    <string name="loading_schools">Laden&#8230;</string>
+    <string name="please_wait">Even geduld aub.</string>
+    <string name="back">Terug</string>
+    <string name="warning_hide_actionbar">De menubalk verbergen is niet aan te raden als je geen menuknopje op je apparaat hebt. Doorgaan?</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nee</string>
+    <string name="repeat_click_to_close">Klik nog een keer om de app af te sluiten</string>
+    <string name="offline_mode">Offline modus, niet alle functies zijn beschikbaar</string>
 
+    <string name="error">Probleem</string>
+    <string name="error_network">Er is een netwerkprobleem opgetreden.</string>
+    <string name="error_no_schools">Er zijn geen scholen gevonden. Contacteer de ontwikkelaar aub.</string>
+    <string name="error_parsing_schools">Lijst met scholen kon niet worden opgehaald. Contacteer de ontwikkelaar aub.</string>
+    <string name="error_saving_schools">Lijst met scholen kon niet worden opgeslagen.</string>
+    <string name="error_weird_problem">Vreemd probleem: %s</string>
 </resources>
