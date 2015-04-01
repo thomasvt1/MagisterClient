@@ -3,6 +3,7 @@ package me.thomasvt.magisterclient;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,21 +12,17 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.text.format.DateUtils;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,13 +33,15 @@ import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import me.thomasvt.magisterclient.db.School;
+import me.thomasvt.magisterclient.db.SchoolDatabaseHelper;
+
 public class SchoolSelector extends Activity {
     private ListView mListView;
     private EditText mEditText;
-    private File mSchoolListCache;
     private SharedPreferences mPreferences;
+    private SchoolDatabaseHelper mDatabase;
 
-    private final static long SCHOOL_LIST_CACHE_MAX_AGE = 7 * DateUtils.DAY_IN_MILLIS;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_school_selector);
@@ -51,34 +50,25 @@ public class SchoolSelector extends Activity {
 
         // Tobias: Dit zorgt ervoor dat de "home"-knop op de actionbar alleen zichtbaar is als de parent activity
         // daadwerkelijk nog open is. Dit is alleen zo als er al een URL is ingesteld.
-        getActionBar().setDisplayHomeAsUpEnabled(mPreferences.getString(Magister.PREF_URL, null) != null);
+        getActionBar().setDisplayHomeAsUpEnabled(mPreferences.getString(Magister.PREF_HOST, null) != null);
 
         mListView = (ListView) findViewById(R.id.school_list);
         mEditText = (EditText) findViewById(R.id.school_filter);
-        mSchoolListCache = new File(getFilesDir() + File.separator + "school_list.json");
 
-        if(!mSchoolListCache.exists() || System.currentTimeMillis() - mSchoolListCache.lastModified() > SCHOOL_LIST_CACHE_MAX_AGE) {
-            new SchoolListDownloader().execute();
+        mDatabase = new SchoolDatabaseHelper(this);
+
+        List<School> schoolList = mDatabase.getSchools();
+        if(schoolList.size() > 0) {
+            setupList(schoolList);
         }
         else {
-            try {
-                FileInputStream fis = new FileInputStream(mSchoolListCache);
-                JSONArray jsonSchoolList = new JSONArray(Utils.convertStream(fis));
-                fis.close();
-                List<School> schoolList = new ArrayList<School>();
-                for(int i = 0; i < jsonSchoolList.length(); i++) {
-                    JSONObject jsonSchool = jsonSchoolList.getJSONObject(i);
-                    School school = new School();
-                    school.name = jsonSchool.getString("name");
-                    school.url = jsonSchool.getString("url");
-                    schoolList.add(school);
-                }
-                setupList(schoolList);
-            }
-            catch (Exception e) {
-                new SchoolListDownloader().execute();
-            }
+            new SchoolListDownloader().execute();
         }
+    }
+
+    protected void onDestroy() {
+        mDatabase.close();
+        super.onDestroy();
     }
 
     class SchoolListDownloader extends AsyncTask<Void, Void, Object> {
@@ -117,7 +107,7 @@ public class SchoolSelector extends Activity {
 
                 while(matcher.find()) {
                     School school = new School();
-                    school.url = matcher.group(1).replace(".swp.nl", ".magister.net");
+                    school.host = matcher.group(1).replace(".swp.nl", ".magister.net");
                     school.name = matcher.group(2);
                     schoolList.add(school);
                 }
@@ -125,18 +115,7 @@ public class SchoolSelector extends Activity {
                 if(schoolList.size() == 0)
                     return new RuntimeException(getString(R.string.error_no_schools));
                 else {
-                    JSONArray jsonSchoolList = new JSONArray();
-
-                    for(School school : schoolList) {
-                        JSONObject jsonSchool = new JSONObject();
-                        jsonSchool.put("name", school.name);
-                        jsonSchool.put("url", school.url);
-                        jsonSchoolList.put(jsonSchool);
-                    }
-
-                    FileOutputStream fos = new FileOutputStream(mSchoolListCache);
-                    fos.write(jsonSchoolList.toString().getBytes("UTF-8"));
-                    fos.close();
+                    mDatabase.setSchools(schoolList);
                     return schoolList;
                 }
             } catch (Exception e) {
@@ -182,19 +161,8 @@ public class SchoolSelector extends Activity {
         }
     }
 
-    // Data structure voor scholen
-    class School {
-        String url;
-        String name;
-
-        // Compatibiliteit met o.a. ArrayAdapter
-        public String toString() {
-            return name;
-        }
-    }
-
     private void setupList(final List<School> schoolList) {
-        final ArrayAdapter<School> adapter = new ArrayAdapter<School>(SchoolSelector.this, android.R.layout.simple_list_item_1, schoolList);
+        final SchoolAdapter adapter = new SchoolAdapter(SchoolSelector.this, schoolList);
         mEditText.setEnabled(true);
         mEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -209,18 +177,6 @@ public class SchoolSelector extends Activity {
             }
         });
         mListView.setAdapter(adapter);
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                // Geselecteerde school
-                School selectedSchool = (School) adapterView.getItemAtPosition(i);
-                SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(SchoolSelector.this);
-                mPreferences.edit().putString(Magister.PREF_URL, selectedSchool.url).apply();
-
-                finish();
-                startActivity(new Intent(SchoolSelector.this, Magister.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-            }
-        });
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -229,5 +185,56 @@ public class SchoolSelector extends Activity {
             return true;
         }
         return false;
+    }
+
+    class SchoolAdapter extends ArrayAdapter<School> {
+        public SchoolAdapter(Context context, List<School> schoolList) {
+            super(context, R.layout.row_school, schoolList);
+        }
+
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view = convertView;
+            ViewHolder viewHolder;
+            if(view == null) {
+                view = getLayoutInflater().inflate(R.layout.row_school, null);
+                viewHolder = new ViewHolder();
+                viewHolder.text = (TextView) view.findViewById(android.R.id.text1);
+                viewHolder.button = (ImageView) view.findViewById(R.id.favourite);
+                view.setTag(viewHolder);
+            }
+            else {
+                viewHolder = (ViewHolder) view.getTag();
+            }
+
+            final School school = getItem(position);
+
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(SchoolSelector.this);
+                    mPreferences.edit().putString(Magister.PREF_HOST, school.host).apply();
+
+                    finish();
+                    startActivity(new Intent(SchoolSelector.this, Magister.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                }
+            });
+
+            viewHolder.text.setText(school.name);
+            viewHolder.button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    school.favourite = !school.favourite;
+                    mDatabase.setFavourite(school.id, school.favourite);
+                    ((ImageView) view).setImageResource(school.favourite ? R.drawable.ic_action_important_on : R.drawable.ic_action_important);
+                }
+            });
+            viewHolder.button.setImageResource(school.favourite ? R.drawable.ic_action_important_on : R.drawable.ic_action_important);
+            return view;
+        }
+
+        class ViewHolder {
+            TextView text;
+            ImageView button;
+        }
     }
 }
