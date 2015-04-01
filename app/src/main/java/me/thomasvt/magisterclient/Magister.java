@@ -18,14 +18,20 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import java.util.List;
+
+import me.thomasvt.magisterclient.db.School;
+import me.thomasvt.magisterclient.db.SchoolDatabaseHelper;
+
 
 public class Magister extends Activity {
     private WebView mWebView;
     private SharedPreferences mPreferences;
+    private SchoolDatabaseHelper mDatabase;
     
     public static final String TAG = "Magistre";
     private static final String PREF_HIDEMENU = "hidemenu";
-    public static final String PREF_URL = "url";
+    public static final String PREF_HOST = "host";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,13 +39,23 @@ public class Magister extends Activity {
         super.onCreate(savedInstanceState);
         mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
+        mDatabase = new SchoolDatabaseHelper(this);
+
         if (mPreferences.getBoolean(PREF_HIDEMENU, false)) {
             getActionBar().hide();
         }
 
         CookieSyncManager.createInstance(this).startSync();
 
-        String url = mPreferences.getString(PREF_URL, null);
+        String oldUrl = mPreferences.getString("url", null);
+        if(oldUrl != null) {
+            mPreferences.edit()
+                .putString(PREF_HOST, oldUrl.endsWith(".magister.net") ? oldUrl : oldUrl + ".magister.net")
+                .remove("url")
+                .apply();
+        }
+
+        String url = mPreferences.getString(PREF_HOST, null);
         if(url == null) {
             selectSchool();
             finish();
@@ -116,6 +132,7 @@ public class Magister extends Activity {
     private void loadWebsite() {
         String url = "https://" + getHost() + "/";
         Log.i(TAG, "loadWebsite");
+        mWebView.loadUrl("about:blank");
 
         WebSettings webSettings = mWebView.getSettings();
 
@@ -143,13 +160,7 @@ public class Magister extends Activity {
     }
 
     public String getHost() {
-        String url = mPreferences.getString(PREF_URL, null);
-        // Tobias: Compat met vorige versies
-        if(!url.endsWith(".magister.net")) {
-            url += ".magister.net";
-            mPreferences.edit().putString(PREF_URL, url).apply();
-        }
-        return url;
+        return mPreferences.getString(PREF_HOST, null);
     }
 
     private void selectSchool() {
@@ -200,6 +211,9 @@ public class Magister extends Activity {
         boolean actionBarHidden = mPreferences.getBoolean(PREF_HIDEMENU, false);
         menu.findItem(R.id.action_hide_actionbar).setVisible(!actionBarHidden).setEnabled(!actionBarHidden);
         menu.findItem(R.id.action_show_actionbar).setVisible(actionBarHidden).setEnabled(actionBarHidden);
+
+        boolean showFavourites = mDatabase.hasFavourites();
+        menu.findItem(R.id.favourite_schools).setVisible(showFavourites).setEnabled(showFavourites);
         return true;
     }
 
@@ -233,6 +247,22 @@ public class Magister extends Activity {
             case R.id.action_show_actionbar:
                 getActionBar().show();
                 mPreferences.edit().putBoolean(PREF_HIDEMENU, false).apply();
+                return true;
+            case R.id.favourite_schools:
+                final List<School> favouriteList = mDatabase.getFavourites();
+                CharSequence[] favourites = new CharSequence[favouriteList.size()];
+                for(int i = 0; i < favouriteList.size(); i++) {
+                    favourites[i] = favouriteList.get(i).name;
+                }
+                new AlertDialog.Builder(Magister.this)
+                    .setItems(favourites, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            mPreferences.edit().putString(PREF_HOST, favouriteList.get(i).host).apply();
+                            loadWebsite();
+                        }
+                    })
+                    .show();
                 return true;
         }
         return false;

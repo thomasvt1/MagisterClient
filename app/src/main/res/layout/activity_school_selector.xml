@@ -12,7 +12,8 @@
         android:id="@+id/school_filter"
         android:layout_alignParentTop="true"
         android:enabled="false"
-        android:hint="@string/hint_search" />
+        android:hint="@string/hint_search"
+        android:inputType="textNoSuggestions|textFilter|textCapWords|text" />
 
     <ListView
         android:layout_width="match_parent"

@@ -1,7 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+    <style name="AppTheme" parent="android:Theme.Holo">
         <!-- Customize your theme here. -->
+    </style>
+
+    <style name="Widget.ImageView.Pressable" parent="android:Widget">
+        <item name="android:background">@drawable/pressable</item>
+        <item name="android:clickable">true</item>
+        <item name="android:padding">@dimen/image_button_padding</item>
     </style>
 </resources>

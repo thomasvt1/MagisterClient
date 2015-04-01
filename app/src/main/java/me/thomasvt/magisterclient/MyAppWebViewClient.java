@@ -50,7 +50,7 @@ public class MyAppWebViewClient extends WebViewClient {
             view.goBack();
             return false;
         }
-        if (url.startsWith("https://" + mPreferences.getString(Magister.PREF_URL, null))) {
+        if (url.startsWith("https://" + mPreferences.getString(Magister.PREF_HOST, null))) {
             return false;
         }
         return false;
