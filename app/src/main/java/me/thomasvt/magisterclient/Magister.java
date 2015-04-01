@@ -92,19 +92,6 @@ public class Magister extends Activity {
         giveVoteOption(); //ask for rating if requirement met
     }
 
-    /* Disabled because function caused a freeze on startup, causing an never ending white screen.
-    void analytics() {
-        Log.i(TAG, "analytics");
-        GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
-        analytics.newTracker(R.xml.global_tracker);
-        analytics.enableAutoActivityReports(getApplication());
-        analytics.setLocalDispatchPeriod(30);
-
-        GoogleAnalytics.getInstance(this).reportActivityStart(this); //Get an Analytics tracker to report app starts & uncaught exceptions etc.
-        GoogleAnalytics.getInstance(this).dispatchLocalHits();
-    }
-    */
-
     protected void onDestroy() {
         Log.i(TAG, "onDestroy");
         CookieSyncManager.getInstance().stopSync();
