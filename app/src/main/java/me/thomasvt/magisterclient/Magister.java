@@ -77,8 +77,7 @@ public class Magister extends Activity {
         webSettings.setAppCacheMaxSize(1024 * 1024 * 8);
         webSettings.setAppCachePath(getCacheDir().getAbsolutePath());
         //TODO: Better cache function
-        //webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        //webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+
         if (Build.VERSION.SDK_INT >= 16) {
             webSettings.setAllowUniversalAccessFromFileURLs(true);
             webSettings.setAllowFileAccessFromFileURLs(true);
