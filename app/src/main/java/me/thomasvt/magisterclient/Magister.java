@@ -179,12 +179,12 @@ public class Magister extends Activity {
             return;
         }
 
-        mExitToast = Toast.makeText(this, R.string.repeat_click_to_close, Toast.LENGTH_SHORT);
-        mExitToast.show();
-
         if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack()) {
             mWebView.goBack();
-            return;
+        }
+        else {
+            mExitToast = Toast.makeText(this, R.string.repeat_click_to_close, Toast.LENGTH_SHORT);
+            mExitToast.show();
         }
     }
 
