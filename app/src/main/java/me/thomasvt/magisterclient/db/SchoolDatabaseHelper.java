@@ -26,9 +26,9 @@ public class SchoolDatabaseHelper {
     private List<School> _getSchools(boolean favourites) {
         Cursor cursor;
         if(favourites)
-            cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, SchoolDatabase.Fields.CFAVOURITE + " > 0", null, null, null, SchoolDatabase.Fields.CNAME);
+            cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, SchoolDatabase.Fields.CFAVOURITE + " > 0", null, null, null, null);
         else
-            cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, null, null, null, null, SchoolDatabase.Fields.CNAME);
+            cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, null, null, null, null, null);
 
         List<School> schoolList = new ArrayList<>();
         cursor.moveToFirst();
