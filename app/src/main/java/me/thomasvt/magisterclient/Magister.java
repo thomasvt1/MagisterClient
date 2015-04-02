@@ -171,11 +171,6 @@ public class Magister extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack()) {
-            mWebView.goBack();
-            return;
-        }
-
         // Tobias: Degelijkere methode om te checken of een Toast nog zichtbaar is.
         if (mExitToast != null && mExitToast.getView() != null && mExitToast.getView().isShown()) {
             mExitToast.cancel();
@@ -185,6 +180,11 @@ public class Magister extends Activity {
 
         mExitToast = Toast.makeText(this, R.string.repeat_click_to_close, Toast.LENGTH_SHORT);
         mExitToast.show();
+
+        if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack()) {
+            mWebView.goBack();
+            return;
+        }
     }
 
     @Override
