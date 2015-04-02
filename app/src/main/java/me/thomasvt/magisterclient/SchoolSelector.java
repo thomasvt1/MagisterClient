@@ -222,10 +222,33 @@ public class SchoolSelector extends Activity {
             viewHolder.text.setText(school.name);
             viewHolder.button.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View view) {
-                    school.favourite = !school.favourite;
-                    mDatabase.setFavourite(school.id, school.favourite);
-                    ((ImageView) view).setImageResource(school.favourite ? R.drawable.ic_action_important_on : R.drawable.ic_action_important);
+                public void onClick(final View view) {
+                    DialogInterface.OnClickListener toggleFavourite = new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                            // Tobias: indien de listener aangeroepen wordt via AlertDialog
+                            // is dialogInterface niet null.
+                            if(dialogInterface != null) {
+                                mPreferences.edit().putBoolean(Magister.PREF_FAVOURITE_INFO_SHOWN, true).apply();
+                            }
+                            school.favourite = !school.favourite;
+                            mDatabase.setFavourite(school.id, school.favourite);
+                            ((ImageView) view).setImageResource(school.favourite ? R.drawable.ic_action_important_on : R.drawable.ic_action_important);
+                        }
+                    };
+
+                    if(!school.favourite && !mPreferences.getBoolean(Magister.PREF_FAVOURITE_INFO_SHOWN, false)) {
+                        new AlertDialog.Builder(SchoolSelector.this)
+                            .setTitle(R.string.add_favourite)
+                            .setMessage(R.string.info_first_favourite)
+                            .setPositiveButton(R.string.yes, toggleFavourite)
+                            .setNegativeButton(R.string.no, null)
+                            .show();
+                    }
+                    else {
+                        toggleFavourite.onClick(null, 0);
+                    }
                 }
             });
             viewHolder.button.setImageResource(school.favourite ? R.drawable.ic_action_important_on : R.drawable.ic_action_important);

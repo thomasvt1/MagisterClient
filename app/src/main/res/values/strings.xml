@@ -21,6 +21,8 @@
     <string name="favourite_schools">Mijn scholen</string>
     <string name="refresh_list">Lijst vernieuwen</string>
     <string name="warning_refresh_list">Het vernieuwen van de lijst verwijderd al uw favoriete scholen. Weet u zeker dat u door wilt gaan?</string>
+    <string name="add_favourite">School toevoegen</string>
+    <string name="info_first_favourite">U staat op het punt een school toe te voegen. U kunt uw scholen terugvinden via de menu-optie "Mijn scholen" in de app. Wilt u doorgaan?</string>
 
     <string name="error">Probleem</string>
     <string name="error_network">Er is een netwerkprobleem opgetreden.</string>

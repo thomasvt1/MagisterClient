@@ -32,6 +32,7 @@ public class Magister extends Activity {
     public static final String TAG = "Magistre";
     private static final String PREF_HIDEMENU = "hidemenu";
     public static final String PREF_HOST = "host";
+    public static final String PREF_FAVOURITE_INFO_SHOWN = "favourite_info_shown";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
