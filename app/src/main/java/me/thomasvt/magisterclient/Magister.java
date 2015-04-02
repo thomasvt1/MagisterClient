@@ -78,8 +78,7 @@ public class Magister extends Activity {
         webSettings.setAppCacheMaxSize(1024 * 1024 * 8);
         webSettings.setAppCachePath(getCacheDir().getAbsolutePath());
         //TODO: Better cache function
-        //webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        //webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+
         if (Build.VERSION.SDK_INT >= 16) {
             webSettings.setAllowUniversalAccessFromFileURLs(true);
             webSettings.setAllowFileAccessFromFileURLs(true);
@@ -92,19 +91,6 @@ public class Magister extends Activity {
 
         giveVoteOption(); //ask for rating if requirement met
     }
-
-    /* Disabled because function caused a freeze on startup, causing an never ending white screen.
-    void analytics() {
-        Log.i(TAG, "analytics");
-        GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
-        analytics.newTracker(R.xml.global_tracker);
-        analytics.enableAutoActivityReports(getApplication());
-        analytics.setLocalDispatchPeriod(30);
-
-        GoogleAnalytics.getInstance(this).reportActivityStart(this); //Get an Analytics tracker to report app starts & uncaught exceptions etc.
-        GoogleAnalytics.getInstance(this).dispatchLocalHits();
-    }
-    */
 
     protected void onDestroy() {
         Log.i(TAG, "onDestroy");
@@ -186,11 +172,6 @@ public class Magister extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack()) {
-            mWebView.goBack();
-            return;
-        }
-
         // Tobias: Degelijkere methode om te checken of een Toast nog zichtbaar is.
         if (mExitToast != null && mExitToast.getView() != null && mExitToast.getView().isShown()) {
             mExitToast.cancel();
@@ -200,6 +181,11 @@ public class Magister extends Activity {
 
         mExitToast = Toast.makeText(this, R.string.repeat_click_to_close, Toast.LENGTH_SHORT);
         mExitToast.show();
+
+        if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack()) {
+            mWebView.goBack();
+            return;
+        }
     }
 
     @Override
