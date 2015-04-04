@@ -10,7 +10,7 @@ public class SchoolDatabase extends SQLiteOpenHelper {
     }
 
     protected static final String DATABASE_NAME = "schools.db";
-    protected static final int DATABASE_VERSION = 1;
+    protected static final int DATABASE_VERSION = 2;
     public static final String TABLE_SCHOOLS = "schools";
 
     public static class Fields {
@@ -26,7 +26,9 @@ public class SchoolDatabase extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i2) {
-
+    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int before, int after) {
+        if(before == 1 && after == 2) {
+            sqLiteDatabase.delete(TABLE_SCHOOLS, null, null);
+        }
     }
 }
