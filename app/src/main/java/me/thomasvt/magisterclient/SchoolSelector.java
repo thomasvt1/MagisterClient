@@ -26,9 +26,9 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -104,30 +104,12 @@ public class SchoolSelector extends Activity {
                 html = scanner.hasNext() ? scanner.next() : "";
                 scanner.close();
 
-                List<School> schoolList = new ArrayList<School>();
+                List<School> schoolList = new ArrayList<>();
                 matcher = SCHOOL_PATTERN.matcher(html);
 
                 while(matcher.find()) {
-                    School school = new School();
-                    school.host = matcher.group(1).replace(".swp.nl", ".magister.net");
-                    school.name = matcher.group(2);
-                    schoolList.add(school);
+                    schoolList.add(new School(matcher.group(2), matcher.group(1).replace(".swp.nl", ".magister.net")));
                 }
-
-                //Thomas: Methode om scholen handmatig toe te voegen, want sommige scholen staan blijkbaar niet in de lijst?
-                if (schoolList.size() != 0) {
-                    Map<String, String> customSchools = new HashMap<>(); //name, school.
-                    customSchools.put("Koning Willem II College", "willem2.magister.net"); // Koning Willem II College
-
-                    for (Map.Entry<String, String> customSchool : customSchools.entrySet()) {
-                        School school = new School();
-                        school.name = customSchool.getKey();
-                        school.host = customSchool.getValue();
-                        schoolList.add(school);
-                    }
-
-                }
-                //Thomas: Einde methode
 
                 if(schoolList.size() == 0)
                     return new RuntimeException(getString(R.string.error_no_schools));
@@ -179,6 +161,24 @@ public class SchoolSelector extends Activity {
     }
 
     private void setupList(final List<School> schoolList) {
+        // Tobias: Hierheen verplaatst omdat anders de "extra" scholen niet getoond worden na een update.
+        // De database wordt immers niet vernieuwd. Ik heb de code wat efficiënter gemaakt.
+
+        //Thomas: Methode om scholen handmatig toe te voegen, want sommige scholen staan blijkbaar niet in de lijst?
+        if (schoolList.size() != 0) {
+            schoolList.add(new School("Koning Willem II College", "willem2.magister.net"));
+        }
+        //Thomas: Einde methode
+
+        // Tobias: Sorteer schoolList op naam. Aangezien we zelf scholen toevoegen kunnen we niet meer
+        // de sortering van kennisnet gebruiken.
+        Collections.sort(schoolList, new Comparator<School>() {
+            @Override
+            public int compare(School school, School t1) {
+                return school.name.compareToIgnoreCase(t1.name);
+            }
+        });
+
         final SchoolAdapter adapter = new SchoolAdapter(SchoolSelector.this, schoolList);
         mEditText.setEnabled(true);
         mEditText.addTextChangedListener(new TextWatcher() {
