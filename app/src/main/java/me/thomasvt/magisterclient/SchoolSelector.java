@@ -26,7 +26,9 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -111,6 +113,21 @@ public class SchoolSelector extends Activity {
                     school.name = matcher.group(2);
                     schoolList.add(school);
                 }
+
+                //Thomas: Methode om scholen handmatig toe te voegen, want sommige scholen staan blijkbaar niet in de lijst?
+                if (schoolList.size() != 0) {
+                    Map<String, String> customSchools = new HashMap<>(); //name, school.
+                    customSchools.put("Koning Willem II College", "willem2.magister.net"); // Koning Willem II College
+
+                    for (Map.Entry<String, String> customSchool : customSchools.entrySet()) {
+                        School school = new School();
+                        school.name = customSchool.getKey();
+                        school.host = customSchool.getValue();
+                        schoolList.add(school);
+                    }
+
+                }
+                //Thomas: Einde methode
 
                 if(schoolList.size() == 0)
                     return new RuntimeException(getString(R.string.error_no_schools));
