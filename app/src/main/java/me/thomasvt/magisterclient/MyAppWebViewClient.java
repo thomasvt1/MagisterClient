@@ -38,7 +38,7 @@ public class MyAppWebViewClient extends WebViewClient {
 
 
     public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-        String html = "<html><body><h2>Geen internet!</h2>Het lijkt erop dat je geen internetverbinding hebt.<br>Probeer het later opnieuw!<br><br><br><br><h3>Tip:</h3>Laad pagina's als je verbinding hebt zodat als je offline gaat de app deze van je cache kan laden.<br>Ook kan het zijn dat jouw school nog geen Magister 6 ondersteund.</body></html>";
+        String html = "<html><body><h2>Geen internet!</h2>Het lijkt erop dat je geen internetverbinding hebt.<br>Probeer het later opnieuw!<br><br><br><br><h3>Tip:</h3>Laad pagina's als je verbinding hebt zodat als je offline gaat de app deze van je cache kan laden.<br>Ook kan het zijn dat jouw school nog geen Magister 6 ondersteunt.</body></html>";
         view.loadData(html, "text/html", null);
     }
 

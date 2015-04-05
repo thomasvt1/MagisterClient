@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" />
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/AppRater.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/Magister.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/MyAppWebViewClient.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/SchoolSelector.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/Utils.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/db/School.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/db/SchoolDatabase.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/me/thomasvt/magisterclient/db/SchoolDatabaseHelper.java" charset="UTF-8" />
+  </component>
 </project>
-

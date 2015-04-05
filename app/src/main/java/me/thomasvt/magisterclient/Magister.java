@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.CookieSyncManager;
+import android.webkit.WebBackForwardList;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
@@ -179,7 +180,10 @@ public class Magister extends Activity {
             return;
         }
 
-        if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack()) {
+        WebBackForwardList history = mWebView.copyBackForwardList();
+        int prevIndex = history.getCurrentIndex() - 1;
+
+        if (mWebView != null && !mWebView.getUrl().equals("https://" + getHost() + "/magister/#/vandaag") && mWebView.canGoBack() && !(prevIndex >= 0 && history.getItemAtIndex(prevIndex).getUrl().equals("about:blank"))) {
             mWebView.goBack();
         }
         else {
