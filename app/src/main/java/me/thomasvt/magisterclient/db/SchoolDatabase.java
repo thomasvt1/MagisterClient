@@ -22,7 +22,7 @@ public class SchoolDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        sqLiteDatabase.execSQL(String.format("CREATE TABLE %s (%s INTEGER PRIMARY KEY AUTOINCREMENT, %s TEXT, %s TEXT, %s BOOLEAN, %s BOOLEAN)", TABLE_SCHOOLS, Fields.ID, Fields.NAME, Fields.HOST, Fields.FAVOURITE));
+        sqLiteDatabase.execSQL(String.format("CREATE TABLE %s (%s INTEGER PRIMARY KEY AUTOINCREMENT, %s TEXT, %s TEXT, %s BOOLEAN)", TABLE_SCHOOLS, Fields.ID, Fields.NAME, Fields.HOST, Fields.FAVOURITE));
     }
 
     @Override
