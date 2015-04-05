@@ -162,7 +162,7 @@ public class SchoolSelector extends Activity {
 
     private void setupList(final List<School> schoolList) {
         // Tobias: Hierheen verplaatst omdat anders de "extra" scholen niet getoond worden na een update.
-        // De database wordt immers niet vernieuwd. Ik heb de code wat efficiënter gemaakt.
+        // De database wordt immers niet vernieuwd. Ik heb de code wat efficiÃ«nter gemaakt.
 
         //Thomas: Methode om scholen handmatig toe te voegen, want sommige scholen staan blijkbaar niet in de lijst?
         if (schoolList.size() != 0) {
