@@ -7,11 +7,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.format.DateUtils;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,21 +23,16 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import org.json.JSONException;
-
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import me.thomasvt.magisterclient.db.School;
+import me.thomasvt.magisterclient.db.SchoolDatabase;
 import me.thomasvt.magisterclient.db.SchoolDatabaseHelper;
 
 public class SchoolSelector extends Activity {
@@ -43,6 +40,7 @@ public class SchoolSelector extends Activity {
     private EditText mEditText;
     private SharedPreferences mPreferences;
     private SchoolDatabaseHelper mDatabase;
+    private static final String SCHOOL_LIST_URL = "https://raw.githubusercontent.com/Tobiaqs/MagisterSchools/master/i-like-trains.txt";
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,7 +58,7 @@ public class SchoolSelector extends Activity {
         mDatabase = new SchoolDatabaseHelper(this);
 
         List<School> schoolList = mDatabase.getSchools();
-        if(schoolList.size() > 0) {
+        if(schoolList.size() > 0 && System.currentTimeMillis() - mPreferences.getLong(Magister.PREF_LAST_SCHOOL_LIST_UPDATE, 0) < DateUtils.DAY_IN_MILLIS) {
             setupList(schoolList);
         }
         else {
@@ -74,8 +72,7 @@ public class SchoolSelector extends Activity {
     }
 
     class SchoolListDownloader extends AsyncTask<Void, Void, Object> {
-        final Pattern RID_PATTERN = Pattern.compile("rid=([^\"]+)");
-        final Pattern SCHOOL_PATTERN = Pattern.compile("<option value=\"([^;]+);[^\"]+\">(.+?)</option>");
+        final Pattern SCHOOL_PATTERN = Pattern.compile("^([^;]+);(.+)$", Pattern.MULTILINE);
         ProgressDialog mProgressDialog;
 
         protected void onPreExecute() {
@@ -83,38 +80,21 @@ public class SchoolSelector extends Activity {
         }
 
         protected Object doInBackground(Void... params) {
-            HttpsURLConnection connection;
-            Scanner scanner;
-            String html;
-            Matcher matcher;
             try {
-                connection = (HttpsURLConnection) new URL("https://selfservice.entree.kennisnet.nl/accountbeheer/").openConnection();
-                html = Utils.convertStream(connection.getInputStream());
-
-                matcher = RID_PATTERN.matcher(html);
-                String rid;
-                if(matcher.find())
-                    rid = matcher.group(1);
-                else
-                    return new RuntimeException(getString(R.string.error_parsing_schools));
-
-                connection = (HttpsURLConnection) new URL("https://aselect.entree.kennisnet.nl/openaselect/sso/web?asid=" + rid + "&requestor=selfservice&remote_idp=https%3A%2F%2Fsiam.swp.nl%2Faselectserver%2Fserver&form_federative_institution=https%3A%2F%2Fsiam.swp.nl%2Faselectserver%2Fserver").openConnection();
-                scanner = new Scanner(connection.getInputStream(), "UTF-8");
-                scanner.useDelimiter("\\A");
-                html = scanner.hasNext() ? scanner.next() : "";
-                scanner.close();
-
+                HttpURLConnection connection = (HttpURLConnection) new URL(SCHOOL_LIST_URL).openConnection();
+                String html = Utils.convertStream(connection.getInputStream());
+                Matcher matcher = SCHOOL_PATTERN.matcher(html);
                 List<School> schoolList = new ArrayList<>();
-                matcher = SCHOOL_PATTERN.matcher(html);
-
                 while(matcher.find()) {
-                    schoolList.add(new School(matcher.group(2), matcher.group(1).replace(".swp.nl", ".magister.net")));
+                    schoolList.add(new School(matcher.group(2), matcher.group(1)));
                 }
 
                 if(schoolList.size() == 0)
                     return new RuntimeException(getString(R.string.error_no_schools));
                 else {
+                    copyFavourites(schoolList);
                     mDatabase.setSchools(schoolList);
+                    mPreferences.edit().putLong(Magister.PREF_LAST_SCHOOL_LIST_UPDATE, System.currentTimeMillis()).apply();
                     return schoolList;
                 }
             } catch (Exception e) {
@@ -139,9 +119,6 @@ public class SchoolSelector extends Activity {
                 else if(exception instanceof RuntimeException) {
                     error = exception.getMessage();
                 }
-                else if(exception instanceof JSONException) {
-                    error = getString(R.string.error_saving_schools);
-                }
                 else /* Vreemde Exception, komt waarschijnlijk niet voor maar je weet het nooit */ {
                     error = getString(R.string.error_weird_problem, exception.getClass().getSimpleName() + "\n" + exception.getMessage());
                 }
@@ -161,24 +138,7 @@ public class SchoolSelector extends Activity {
     }
 
     private void setupList(final List<School> schoolList) {
-        // Tobias: Hierheen verplaatst omdat anders de "extra" scholen niet getoond worden na een update.
-        // De database wordt immers niet vernieuwd. Ik heb de code wat efficiënter gemaakt.
-
-        //Thomas: Methode om scholen handmatig toe te voegen, want sommige scholen staan blijkbaar niet in de lijst?
-        if (schoolList.size() != 0) {
-            schoolList.add(new School("Koning Willem II College", "willem2.magister.net"));
-        }
-        //Thomas: Einde methode
-
-        // Tobias: Sorteer schoolList op naam. Aangezien we zelf scholen toevoegen kunnen we niet meer
-        // de sortering van kennisnet gebruiken.
-        Collections.sort(schoolList, new Comparator<School>() {
-            @Override
-            public int compare(School school, School t1) {
-                return school.name.compareToIgnoreCase(t1.name);
-            }
-        });
-
+        Utils.sortSchoolList(schoolList);
         final SchoolAdapter adapter = new SchoolAdapter(SchoolSelector.this, schoolList);
         mEditText.setEnabled(true);
         mEditText.addTextChangedListener(new TextWatcher() {
@@ -275,6 +235,22 @@ public class SchoolSelector extends Activity {
         class ViewHolder {
             TextView text;
             ImageView button;
+        }
+    }
+
+    private void copyFavourites(List<School> schoolList) {
+        Cursor cursor = mDatabase.raw().query(SchoolDatabase.TABLE_SCHOOLS, new String[] { SchoolDatabase.Fields.NAME }, SchoolDatabase.Fields.FAVOURITE + " > 0", null, null, null, null);
+        List<String> nameList = new ArrayList<>();
+        cursor.moveToFirst();
+        while(!cursor.isAfterLast()) {
+            nameList.add(cursor.getString(0));
+            cursor.moveToNext();
+        }
+        cursor.close();
+
+        for(int i = 0; i < schoolList.size(); i++) {
+            School school = schoolList.get(i);
+            school.favourite = nameList.contains(school.name);
         }
     }
 }

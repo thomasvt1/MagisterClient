@@ -26,7 +26,7 @@ public class SchoolDatabaseHelper {
     private List<School> _getSchools(boolean favourites) {
         Cursor cursor;
         if(favourites)
-            cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, SchoolDatabase.Fields.CFAVOURITE + " > 0", null, null, null, null);
+            cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, SchoolDatabase.Fields.FAVOURITE + " > 0", null, null, null, null);
         else
             cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, null, null, null, null, null);
 
@@ -50,8 +50,14 @@ public class SchoolDatabaseHelper {
 
     public void setFavourite(int id, boolean favourite) {
         ContentValues values = new ContentValues();
-        values.put(SchoolDatabase.Fields.CFAVOURITE, favourite);
-        mSqlite.update(SchoolDatabase.TABLE_SCHOOLS, values, "id = " + id, null);
+        values.put(SchoolDatabase.Fields.FAVOURITE, favourite);
+        mSqlite.update(SchoolDatabase.TABLE_SCHOOLS, values, SchoolDatabase.Fields.ID + " = " + id, null);
+    }
+
+    public void setFavourite(String host, boolean favourite) {
+        ContentValues values = new ContentValues();
+        values.put(SchoolDatabase.Fields.FAVOURITE, favourite);
+        mSqlite.update(SchoolDatabase.TABLE_SCHOOLS, values, SchoolDatabase.Fields.HOST + " = ?", new String[] {host});
     }
 
     private static School getSchoolFromCursor(Cursor cursor) {
@@ -64,7 +70,7 @@ public class SchoolDatabaseHelper {
     }
 
     public boolean hasFavourites() {
-        Cursor cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, SchoolDatabase.Fields.CFAVOURITE + " > 0", null, null, null, null, "1");
+        Cursor cursor = mSqlite.query(SchoolDatabase.TABLE_SCHOOLS, null, SchoolDatabase.Fields.FAVOURITE + " > 0", null, null, null, null, "1");
         cursor.moveToFirst();
         boolean hasNoFavourites = cursor.isAfterLast();
         cursor.close();
@@ -76,12 +82,16 @@ public class SchoolDatabaseHelper {
         mSqlite.beginTransaction();
         ContentValues values = new ContentValues();
         for(School school : schools) {
-            values.put(SchoolDatabase.Fields.CNAME, school.name);
-            values.put(SchoolDatabase.Fields.CHOST, school.host);
-            values.put(SchoolDatabase.Fields.CFAVOURITE, school.favourite);
+            values.put(SchoolDatabase.Fields.NAME, school.name);
+            values.put(SchoolDatabase.Fields.HOST, school.host);
+            values.put(SchoolDatabase.Fields.FAVOURITE, school.favourite);
             mSqlite.insert(SchoolDatabase.TABLE_SCHOOLS, null, values);
         }
         mSqlite.setTransactionSuccessful();
         mSqlite.endTransaction();
+    }
+
+    public SQLiteDatabase raw() {
+        return mSqlite;
     }
 }
