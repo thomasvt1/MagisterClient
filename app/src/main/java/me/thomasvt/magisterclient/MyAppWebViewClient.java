@@ -49,10 +49,6 @@ public class MyAppWebViewClient extends WebViewClient {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             context.startActivity(intent);
             view.goBack();
-            return false;
-        }
-        if (url.startsWith("https://" + mPreferences.getString(Magister.PREF_HOST, null))) {
-            return false;
         }
         return false;
     }

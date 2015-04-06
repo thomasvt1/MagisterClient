@@ -19,6 +19,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import me.thomasvt.magisterclient.db.School;
@@ -34,6 +35,8 @@ public class Magister extends Activity {
     private static final String PREF_HIDEMENU = "hidemenu";
     public static final String PREF_HOST = "host";
     public static final String PREF_FAVOURITE_INFO_SHOWN = "favourite_info_shown";
+    public static final String PREF_HIDEMENU_WARNING_SHOWN = "hidemenu_warning_shown";
+    public static final String PREF_LAST_SCHOOL_LIST_UPDATE = "last_school_list_update";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -222,18 +225,27 @@ public class Magister extends Activity {
                 selectSchool();
                 return true;
             case R.id.action_hide_actionbar:
-                new AlertDialog.Builder(this)
-                    .setTitle(R.string.action_hide_actionbar)
-                    .setMessage(R.string.warning_hide_actionbar)
-                    .setNegativeButton(R.string.no, null)
-                    .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            getActionBar().hide();
-                            mPreferences.edit().putBoolean(PREF_HIDEMENU, true).apply();
-                        }
-                    })
-                    .show();
+                if(mPreferences.getBoolean(PREF_HIDEMENU_WARNING_SHOWN, false)) {
+                    mPreferences.edit().putBoolean(PREF_HIDEMENU, true).apply();
+                    getActionBar().hide();
+                }
+                else {
+                    new AlertDialog.Builder(this)
+                            .setTitle(R.string.action_hide_actionbar)
+                            .setMessage(R.string.warning_hide_actionbar)
+                            .setNegativeButton(R.string.no, null)
+                            .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    getActionBar().hide();
+                                    mPreferences.edit()
+                                            .putBoolean(PREF_HIDEMENU, true)
+                                            .putBoolean(PREF_HIDEMENU_WARNING_SHOWN, true)
+                                            .apply();
+                                }
+                            })
+                            .show();
+                }
                 return true;
             case R.id.action_show_actionbar:
                 getActionBar().show();
@@ -241,6 +253,7 @@ public class Magister extends Activity {
                 return true;
             case R.id.favourite_schools:
                 final List<School> favouriteList = mDatabase.getFavourites();
+                Utils.sortSchoolList(favouriteList);
                 CharSequence[] favourites = new CharSequence[favouriteList.size()];
                 for(int i = 0; i < favouriteList.size(); i++) {
                     favourites[i] = favouriteList.get(i).name;
