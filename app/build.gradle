@@ -7,8 +7,8 @@ android {
         applicationId 'me.thomasvt.magisterclient'
         minSdkVersion 11
         targetSdkVersion 22
-        versionCode 22
-        versionName '2.12'
+        versionCode 23
+        versionName '2.13'
     }
     buildTypes {
         release {
