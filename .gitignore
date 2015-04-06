@@ -1,6 +1,7 @@
 .gradle
 /local.properties
 /.idea/workspace.xml
+/.idea/
 /.idea/libraries
 /.idea/dictionaries
 /.idea/gradle.xml
